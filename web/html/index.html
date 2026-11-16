@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CV - Pablo Agustín Miño</title>
+</head>
+<body>
+  <main>
+    <form id="form">
+      <h1>¡Bienvenido!</h1>
+      <label for="name">¿Cómo te llamás?</label>
+      <input id="name" maxlength="50" required>
+      <button type="submit">Entrar</button>
+    </form>
+    <section id="cv" hidden>
+      <h1 id="greeting"></h1>
+    </section>
+    <p id="error" hidden></p>
+  </main>
+  <script>
+    const form = document.getElementById('form');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      try {
+        const res = await fetch('/api/visitors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        document.getElementById('greeting').textContent =
+          `Hola ${data.name}, esta es una versión más desarrollada de mi currículum`;
+        form.hidden = true;
+        document.getElementById('cv').hidden = false;
+      } catch {
+        const err = document.getElementById('error');
+        err.textContent = 'No pude conectar con el servidor.';
+        err.hidden = false;
+      }
+    });
+  </script>
+</body>
+</html>
