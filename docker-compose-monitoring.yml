@@ -41,7 +41,7 @@ services:
 
   # DOCKER CONTAINER METRICS
   cadvisor:
-    image: ghcr.io/google/cadvisor:v0.60.6
+    image: ghcr.io/google/cadvisor:v0.61.0
     container_name: cv-cadvisor
     restart: unless-stopped
     privileged: true
