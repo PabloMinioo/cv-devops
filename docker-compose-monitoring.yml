@@ -5,7 +5,6 @@ services:
   prometheus:
     image: prom/prometheus:v3.16.0
     container_name: cv-prometheus
-    profiles: [monitoring]
     restart: unless-stopped
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -16,7 +15,7 @@ services:
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
-      - prometheus-data:/prometheus
+      - cv-prometheus-data:/prometheus
     networks: [monitoring]
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:9090/-/healthy || exit 1"]
@@ -28,7 +27,6 @@ services:
   alertmanager:
     image: prom/alertmanager:v0.35.0
     container_name: cv-alertmanager
-    profiles: [monitoring]
     restart: unless-stopped
     ports:
       - "127.0.0.1:9093:9093"
@@ -45,7 +43,6 @@ services:
   cadvisor:
     image: ghcr.io/google/cadvisor:v0.60.6
     container_name: cv-cadvisor
-    profiles: [monitoring]
     restart: unless-stopped
     privileged: true
     devices:
@@ -62,7 +59,6 @@ services:
   node-exporter:
     image: prom/node-exporter:v1.12.1
     container_name: cv-node-exporter
-    profiles: [monitoring]
     restart: unless-stopped
     command:
       - --path.rootfs=/host
@@ -74,22 +70,17 @@ services:
   postgres-exporter:
     image: ghcr.io/prometheus-community/postgres-exporter:v0.20.1
     container_name: cv-postgres-exporter
-    profiles: [monitoring]
     restart: unless-stopped
     environment:
       DATA_SOURCE_URI: ${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable
       DATA_SOURCE_USER: ${DB_USER}
       DATA_SOURCE_PASS: ${DB_PASSWORD}
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks: [backend, monitoring]
 
   # METRICS VISUALICER
   grafana:
     image: grafana/grafana:13.3.1
     container_name: cv-grafana
-    profiles: [monitoring]
     restart: unless-stopped
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
@@ -100,7 +91,7 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
-      - grafana-data:/var/lib/grafana
+      - cv-grafana-data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
