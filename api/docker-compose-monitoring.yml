@@ -1,4 +1,4 @@
-name: cv-monitoring
+name: cv-devops-monitoring
 
 services:
   # METRICS

@@ -4,8 +4,8 @@ set -eu
 cd "$(dirname "$0")/.."
 
 ./scripts/setup.sh
-docker compose up -d --build
-docker compose --env-file .env -f monitoring/compose.yaml up -d
+docker compose -f docker-compose-cvapi.yml up -d --build
+docker compose -f docker-compose-monitoring.yml up -d
 
 echo
 echo "Web:          http://localhost:8088"
