@@ -23,13 +23,13 @@ services:
   # API
   api:
     build:
-      context: ./api
+      context: .
       target: development
     container_name: cv-api
     restart: unless-stopped
     env_file: .env
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
     networks: [backend, frontend]
     healthcheck:
