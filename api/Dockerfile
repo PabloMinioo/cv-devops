@@ -1,6 +1,6 @@
 # ETAPA DEPENDENCES
 # Descarga las dependencias de Maven que se usan tanto en Dev como Prod
-FROM eclipse-temurin:21-jdk-alpine AS deps
+FROM eclipse-temurin:25-jdk-alpine AS deps
 WORKDIR /app
 COPY mvnw pom.xml ./
 COPY .mvn .mvn
@@ -22,7 +22,7 @@ RUN ./mvnw -q package -DskipTests
 
 # ETAPA PRODUCTION
 # Solo el JRE y el .jar del build con usuuarios sin privilegios. Etapa mas liviana
-FROM eclipse-temurin:21-jre-alpine AS production
+FROM eclipse-temurin:25-jre-alpine AS production
 RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
