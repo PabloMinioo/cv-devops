@@ -49,7 +49,7 @@ jobs:
 
       # Build local (sin publicar) para poder escanearla antes
       - name: Build (target production)
-        uses: docker/build-push-action@v7.1.0
+        uses: docker/build-push-action@v7.4.0
         with:
           context: ./api
           target: production
@@ -87,7 +87,7 @@ jobs:
 
       - name: Push a GHCR
         if: github.event_name != 'pull_request'
-        uses: docker/build-push-action@v7.1.0
+        uses: docker/build-push-action@v7.4.0
         with:
           context: ./api
           target: production
