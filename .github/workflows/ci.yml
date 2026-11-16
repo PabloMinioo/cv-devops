@@ -36,7 +36,7 @@ jobs:
       - name: Nombre de imagen
         run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/cv-devops-api" >> "$GITHUB_ENV"
 
-      - uses: docker/setup-buildx-action@v4.3.0
+      - uses: docker/setup-buildx-action@v4.4.1
 
       - id: meta
         uses: docker/metadata-action@v6.2.0
