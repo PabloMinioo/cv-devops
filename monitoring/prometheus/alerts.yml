@@ -1,0 +1,28 @@
+groups:
+  - name: availability
+    rules:
+      # Cualquier target que deje de responder
+      - alert: TargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} no responde"
+
+      # Contenedor del proyecto que dejó de reportar
+      - alert: ContainerDown
+        expr: time() - container_last_seen{name=~"cv-.+"} > 60
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "El contenedor {{ $labels.name }} está caído"
+
+      - alert: HighHostCpu
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU del host arriba del 85% por 5 minutos"

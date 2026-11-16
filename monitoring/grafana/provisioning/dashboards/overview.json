@@ -1,0 +1,53 @@
+{
+  "title": "CV DevOps - Overview",
+  "uid": "cv-devops-overview",
+  "schemaVersion": 39,
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Visitantes totales",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "cv_visitors_total", "refId": "A" }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Targets UP",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(up)", "refId": "A" }]
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "Requests por segundo (API)",
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(rate(http_server_requests_seconds_count[1m]))", "legendFormat": "req/s", "refId": "A" }]
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Visitas registradas por minuto",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "increase(cv_visitors_registered_total[1m])", "legendFormat": "visitas", "refId": "A" }]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Conexiones a Postgres",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(pg_stat_database_numbackends{datname=\"cvdb\"})", "legendFormat": "conexiones", "refId": "A" }]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "CPU por contenedor",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "targets": [{ "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"cv-.+\"}[1m]))", "legendFormat": "{{name}}", "refId": "A" }]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Memoria por contenedor",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [{ "expr": "container_memory_working_set_bytes{name=~\"cv-.+\"}", "legendFormat": "{{name}}", "refId": "A" }]
+    }
+  ]
+}

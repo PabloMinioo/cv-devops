@@ -1,0 +1,7 @@
+# Sin notificaciones externas: las alertas se ven en la UI (puerto 9093)
+route:
+  receiver: default
+  group_by: [alertname]
+
+receivers:
+  - name: default
