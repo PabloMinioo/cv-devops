@@ -1,10 +1,17 @@
 name: cv-devops-monitoring
 
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
 services:
   # METRICS
   prometheus:
     image: prom/prometheus:v3.16.0
     container_name: cv-prometheus
+    <<: *hardening
     restart: unless-stopped
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -27,6 +34,7 @@ services:
   alertmanager:
     image: prom/alertmanager:v0.35.0
     container_name: cv-alertmanager
+    <<: *hardening
     restart: unless-stopped
     ports:
       - "127.0.0.1:9093:9093"
@@ -59,6 +67,7 @@ services:
   node-exporter:
     image: prom/node-exporter:v1.12.1
     container_name: cv-node-exporter
+    <<: *hardening
     restart: unless-stopped
     command:
       - --path.rootfs=/host
@@ -70,6 +79,7 @@ services:
   postgres-exporter:
     image: ghcr.io/prometheus-community/postgres-exporter:v0.20.1
     container_name: cv-postgres-exporter
+    <<: *hardening
     restart: unless-stopped
     environment:
       DATA_SOURCE_URI: ${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable
@@ -81,6 +91,7 @@ services:
   grafana:
     image: grafana/grafana:13.3.1
     container_name: cv-grafana
+    <<: *hardening
     restart: unless-stopped
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
@@ -108,22 +119,21 @@ services:
   loki:
     image: grafana/loki:3.7
     container_name: cv-loki
+    <<: *hardening
     restart: unless-stopped
     command: -config.file=/etc/loki/loki-config.yml
     volumes:
       - ./monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
       - cv-loki-data:/loki
     networks: [monitoring]
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3100/ready || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
 
   # COLECTOR DE LOGS
   alloy:
     image: grafana/alloy:v1.22.0
     container_name: cv-alloy
+    <<: *hardening
+    cap_add:
+      - DAC_OVERRIDE
     restart: unless-stopped
     command:
       - run
