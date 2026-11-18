@@ -58,14 +58,11 @@ loki.source.docker "others" {
 loki.process "api" {
   forward_to = [loki.write.local.receiver]
 
-  // Une el stack trace (varias líneas) con el log que lo originó:
-  // una excepción queda como UN solo evento, no como 30 líneas sueltas.
   stage.multiline {
     firstline     = `^\d{4}-\d{2}-\d{2}T`
     max_wait_time = "3s"
   }
 
-  // Nivel (INFO / WARN / ERROR) tomado del formato de Spring Boot
   stage.regex {
     expression = `^\S+\s+(?P<level>TRACE|DEBUG|INFO|WARN|ERROR)\s`
   }
@@ -81,10 +78,18 @@ loki.process "api" {
 loki.process "others" {
   forward_to = [loki.write.local.receiver]
 
-  // Ruido: los healthchecks de nginx se ejecutan cada 15 s y no aportan
   stage.drop {
     expression          = `"(GET|HEAD) /(health|actuator/health)[ ?]`
     drop_counter_reason = "healthcheck"
+  }
+
+  stage.drop {
+    expression          = `caller=metrics\.go`
+    drop_counter_reason = "loki_query_stats"
+  }
+  stage.drop {
+    expression          = `logger=(query_data|plugin\.(prometheus|loki)) `
+    drop_counter_reason = "grafana_query_noise"
   }
 
   stage.match {
