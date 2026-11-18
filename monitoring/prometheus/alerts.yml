@@ -1,7 +1,6 @@
 groups:
   - name: availability
     rules:
-      # Cualquier target que deje de responder
       - alert: TargetDown
         expr: up == 0
         for: 1m
@@ -9,8 +8,8 @@ groups:
           severity: critical
         annotations:
           summary: "{{ $labels.job }} no responde"
+          description: "Prometheus no puede leer métricas de {{ $labels.job }} ({{ $labels.instance }}) hace más de 1 minuto."
 
-      # Contenedor del proyecto que dejó de reportar
       - alert: ContainerDown
         expr: time() - container_last_seen{name=~"cv-.+"} > 60
         for: 1m
@@ -18,7 +17,90 @@ groups:
           severity: critical
         annotations:
           summary: "El contenedor {{ $labels.name }} está caído"
+          description: "cAdvisor no ve a {{ $labels.name }} hace más de 1 minuto."
 
+      - alert: ContainerCrashLooping
+        expr: changes(container_start_time_seconds{name=~"cv-.+"}[15m]) > 2
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.name }} se está reiniciando en bucle"
+          description: "{{ $labels.name }} arrancó {{ $value }} veces en 15 minutos. Revisar sus logs."
+
+  - name: api
+    rules:
+      - alert: ApiHighErrorRate
+        expr: >
+          100 * sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+          / (sum(rate(http_server_requests_seconds_count[5m])) > 0) > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "La API devuelve errores 5xx ({{ $value | printf \"%.1f\" }}%)"
+          description: "Más del 5% de las respuestas fueron 5xx durante 5 minutos. Ver el panel de errores y los logs con level=error."
+
+      - alert: ApiHighLatency
+        expr: >
+          sum(rate(http_server_requests_seconds_sum{uri!~"/actuator.*"}[5m]))
+          / sum(rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "La API responde lento ({{ $value | printf \"%.2f\" }} s de promedio)"
+          description: "El tiempo medio de respuesta superó 1 segundo durante 5 minutos."
+
+      - alert: ApiHeapAlmostFull
+        expr: >
+          sum(jvm_memory_used_bytes{area="heap"})
+          / sum(jvm_memory_max_bytes{area="heap"} > 0) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "La memoria heap de la API supera el 90%"
+          description: "Uso sostenido de heap por encima del 90% durante 10 minutos."
+
+      - alert: ApiDbPoolSaturated
+        expr: hikaricp_connections_active / hikaricp_connections_max > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "El pool de conexiones de la API supera el 80%"
+          description: "Si llega al 100%, las requests quedan esperando una conexión."
+
+  - name: database
+    rules:
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL no responde"
+          description: "postgres-exporter no puede conectarse a la base."
+
+      - alert: PostgresTooManyConnections
+        expr: sum(pg_stat_database_numbackends) / max(pg_settings_max_connections) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Conexiones a PostgreSQL por encima del 80% del máximo"
+          description: "Hay {{ $value | humanizePercentage }} del límite de conexiones en uso."
+
+      - alert: PostgresDeadlocks
+        expr: increase(pg_stat_database_deadlocks{datname="cvdb"}[10m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Se detectaron deadlocks en la base cvdb"
+          description: "Dos transacciones se bloquearon entre sí en los últimos 10 minutos."
+
+  - name: host
+    rules:
       - alert: HighHostCpu
         expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
         for: 5m
@@ -26,3 +108,54 @@ groups:
           severity: warning
         annotations:
           summary: "CPU del host arriba del 85% por 5 minutos"
+          description: "Uso de CPU: {{ $value | printf \"%.0f\" }}%."
+
+      - alert: HighHostMemory
+        expr: 100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Memoria del host arriba del 90%"
+          description: "Memoria en uso: {{ $value | printf \"%.0f\" }}%."
+
+      - alert: HostDiskAlmostFull
+        expr: >
+          100 * (1 - node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"}
+          / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"}) > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disco raíz al {{ $value | printf \"%.0f\" }}%"
+          description: "Queda poco espacio libre en /."
+
+      - alert: HostDiskWillFillIn24h
+        expr: >
+          predict_linear(node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"}[6h], 24 * 3600) < 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "El disco raíz se llenaría en menos de 24 horas"
+          description: "Proyección lineal de las últimas 6 horas."
+
+  - name: observability
+    rules:
+      - alert: LogsNotArriving
+        expr: sum(rate(loki_write_sent_entries_total[10m])) == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alloy no está enviando logs a Loki"
+          description: "No salió ninguna línea de log hacia Loki en los últimos 10 minutos."
+
+      - alert: LogsBeingDropped
+        expr: sum(rate(loki_write_dropped_entries_total[5m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Loki está rechazando logs"
+          description: "Alloy descarta líneas (límite de tasa, cola llena o error del ingester)."

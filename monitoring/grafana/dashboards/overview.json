@@ -6,7 +6,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "editable": true,
   "graphTooltip": 1,
   "refresh": "30s",
@@ -96,7 +96,7 @@
     {
       "type": "stat",
       "title": "Alertas activas",
-      "description": "Alertas en estado firing (ver Alertmanager).",
+      "description": "Alertas en estado firing (detalle en la tabla de abajo).",
       "datasource": {
         "type": "prometheus",
         "uid": "${ds_prom}"
@@ -417,6 +417,64 @@
     },
     {
       "type": "table",
+      "title": "Alertas disparadas",
+      "description": "Alertas activas ahora. Vacío = todo en orden.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "legendFormat": "",
+          "format": "table",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "alertstate": true,
+              "Value": true,
+              "instance": true
+            },
+            "renameByName": {
+              "alertname": "Alerta",
+              "severity": "Severidad"
+            }
+          }
+        }
+      ],
+      "id": 8,
+      "gridPos": {
+        "h": 7,
+        "w": 10,
+        "x": 0,
+        "y": 5
+      }
+    },
+    {
+      "type": "table",
       "title": "Targets de Prometheus",
       "description": "Estado de cada servicio monitoreado.",
       "datasource": {
@@ -480,11 +538,11 @@
           }
         }
       ],
-      "id": 8,
+      "id": 9,
       "gridPos": {
         "h": 7,
-        "w": 16,
-        "x": 0,
+        "w": 10,
+        "x": 10,
         "y": 5
       }
     },
@@ -536,16 +594,16 @@
         "justifyMode": "center",
         "orientation": "auto"
       },
-      "id": 9,
+      "id": 10,
       "gridPos": {
         "h": 7,
-        "w": 8,
-        "x": 16,
+        "w": 4,
+        "x": 20,
         "y": 5
       }
     },
     {
-      "id": 10,
+      "id": 11,
       "type": "row",
       "title": "API (Spring Boot)",
       "collapsed": false,
@@ -604,7 +662,7 @@
           "sort": "desc"
         }
       },
-      "id": 11,
+      "id": 12,
       "gridPos": {
         "h": 8,
         "w": 8,
@@ -659,7 +717,7 @@
           "sort": "desc"
         }
       },
-      "id": 12,
+      "id": 13,
       "gridPos": {
         "h": 8,
         "w": 8,
@@ -669,8 +727,8 @@
     },
     {
       "type": "timeseries",
-      "title": "Errores 5xx por endpoint",
-      "description": "Si está vacío, no hay errores.",
+      "title": "Errores por endpoint (4xx y 5xx)",
+      "description": "4xx = error del cliente, 5xx = error nuestro. Vacío = sin errores.",
       "datasource": {
         "type": "prometheus",
         "uid": "${ds_prom}"
@@ -682,8 +740,8 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum by (uri) (rate(http_server_requests_seconds_count{status=~\"5..\"}[$__rate_interval]))",
-          "legendFormat": "{{uri}}"
+          "expr": "sum by (status, uri) (rate(http_server_requests_seconds_count{status=~\"4..|5..\"}[$__rate_interval]))",
+          "legendFormat": "{{status}} {{uri}}"
         }
       ],
       "fieldConfig": {
@@ -714,7 +772,7 @@
           "sort": "desc"
         }
       },
-      "id": 13,
+      "id": 14,
       "gridPos": {
         "h": 8,
         "w": 8,
@@ -746,7 +804,7 @@
             "type": "prometheus",
             "uid": "${ds_prom}"
           },
-          "expr": "sum(jvm_memory_max_bytes{area=\"heap\"})",
+          "expr": "sum(jvm_memory_max_bytes{area=\"heap\"} > 0)",
           "legendFormat": "máximo"
         }
       ],
@@ -778,7 +836,7 @@
           "sort": "desc"
         }
       },
-      "id": 14,
+      "id": 15,
       "gridPos": {
         "h": 8,
         "w": 6,
@@ -834,7 +892,7 @@
           "sort": "desc"
         }
       },
-      "id": 15,
+      "id": 16,
       "gridPos": {
         "h": 8,
         "w": 6,
@@ -908,7 +966,7 @@
           "sort": "desc"
         }
       },
-      "id": 16,
+      "id": 17,
       "gridPos": {
         "h": 8,
         "w": 6,
@@ -964,7 +1022,7 @@
           "sort": "desc"
         }
       },
-      "id": 17,
+      "id": 18,
       "gridPos": {
         "h": 8,
         "w": 6,
@@ -973,7 +1031,7 @@
       }
     },
     {
-      "id": 18,
+      "id": 19,
       "type": "row",
       "title": "PostgreSQL",
       "collapsed": false,
@@ -1042,7 +1100,7 @@
           "sort": "desc"
         }
       },
-      "id": 19,
+      "id": 20,
       "gridPos": {
         "h": 8,
         "w": 8,
@@ -1106,7 +1164,7 @@
           "sort": "desc"
         }
       },
-      "id": 20,
+      "id": 21,
       "gridPos": {
         "h": 8,
         "w": 8,
@@ -1163,7 +1221,7 @@
           "sort": "desc"
         }
       },
-      "id": 21,
+      "id": 22,
       "gridPos": {
         "h": 8,
         "w": 8,
@@ -1218,7 +1276,7 @@
           "sort": "desc"
         }
       },
-      "id": 22,
+      "id": 23,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -1291,7 +1349,7 @@
           "sort": "desc"
         }
       },
-      "id": 23,
+      "id": 24,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -1300,7 +1358,7 @@
       }
     },
     {
-      "id": 24,
+      "id": 25,
       "type": "row",
       "title": "Contenedores (cAdvisor)",
       "collapsed": false,
@@ -1360,7 +1418,7 @@
           "sort": "desc"
         }
       },
-      "id": 25,
+      "id": 26,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -1416,7 +1474,7 @@
           "sort": "desc"
         }
       },
-      "id": 26,
+      "id": 27,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -1480,7 +1538,7 @@
           "sort": "desc"
         }
       },
-      "id": 27,
+      "id": 28,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -1526,7 +1584,11 @@
           "options": {
             "excludeByName": {
               "Time": true,
-              "__name__": true
+              "__name__": true,
+              "id": true,
+              "image": true,
+              "instance": true,
+              "job": true
             },
             "renameByName": {
               "name": "Contenedor",
@@ -1535,7 +1597,7 @@
           }
         }
       ],
-      "id": 28,
+      "id": 29,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -1544,7 +1606,7 @@
       }
     },
     {
-      "id": 29,
+      "id": 30,
       "type": "row",
       "title": "Servidor (node-exporter)",
       "collapsed": false,
@@ -1605,7 +1667,7 @@
           "sort": "desc"
         }
       },
-      "id": 30,
+      "id": 31,
       "gridPos": {
         "h": 7,
         "w": 6,
@@ -1662,7 +1724,7 @@
           "sort": "desc"
         }
       },
-      "id": 31,
+      "id": 32,
       "gridPos": {
         "h": 7,
         "w": 6,
@@ -1719,7 +1781,7 @@
           "sort": "desc"
         }
       },
-      "id": 32,
+      "id": 33,
       "gridPos": {
         "h": 7,
         "w": 6,
@@ -1793,7 +1855,7 @@
           "sort": "desc"
         }
       },
-      "id": 33,
+      "id": 34,
       "gridPos": {
         "h": 7,
         "w": 6,
@@ -1802,9 +1864,9 @@
       }
     },
     {
-      "id": 34,
+      "id": 35,
       "type": "row",
-      "title": "Logs (Loki)",
+      "title": "Tráfico web (nginx, calculado desde sus logs)",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -1816,8 +1878,8 @@
     },
     {
       "type": "timeseries",
-      "title": "Volumen de logs por servicio",
-      "description": "Líneas por intervalo.",
+      "title": "Requests por código HTTP",
+      "description": "Cada barra es la cantidad de requests del intervalo. Los healthchecks se descartan en Alloy.",
       "datasource": {
         "type": "loki",
         "uid": "${ds_loki}"
@@ -1829,64 +1891,8 @@
             "type": "loki",
             "uid": "${ds_loki}"
           },
-          "expr": "sum by (service) (count_over_time({project=~\"cv-devops.*\"} [$__interval]))",
-          "legendFormat": "{{service}}",
-          "queryType": "range"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "custom": {
-            "drawStyle": "bars",
-            "lineWidth": 1,
-            "fillOpacity": 25,
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "mode": "normal",
-              "group": "A"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "id": 35,
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 72
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Errores por servicio",
-      "description": "Líneas con error, excepción o fatal.",
-      "datasource": {
-        "type": "loki",
-        "uid": "${ds_loki}"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "loki",
-            "uid": "${ds_loki}"
-          },
-          "expr": "sum by (service) (count_over_time({project=~\"cv-devops.*\"} |~ `(?i)(level=error|\\bERROR\\b|exception|fatal|panic)` [$__interval]))",
-          "legendFormat": "{{service}}",
+          "expr": "sum by (status) (count_over_time({service=\"nginx\"} | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <_>` | __error__=\"\" [$__interval]))",
+          "legendFormat": "{{status}}",
           "queryType": "range"
         }
       ],
@@ -1922,14 +1928,14 @@
       "gridPos": {
         "h": 7,
         "w": 12,
-        "x": 12,
+        "x": 0,
         "y": 72
       }
     },
     {
-      "type": "logs",
-      "title": "Logs",
-      "description": "Filtrá por servicio y por texto con las variables de arriba.",
+      "type": "timeseries",
+      "title": "Requests por ruta",
+      "description": "Qué endpoints se usan más.",
       "datasource": {
         "type": "loki",
         "uid": "${ds_loki}"
@@ -1941,25 +1947,485 @@
             "type": "loki",
             "uid": "${ds_loki}"
           },
-          "expr": "{project=~\"cv-devops.*\", service=~\"$service\"} |~ `(?i)$search`",
+          "expr": "sum by (method, path) (count_over_time({service=\"nginx\"} | pattern `<_> - <_> [<_>] \"<method> <path> <_>\" <status> <_>` | __error__=\"\" [$__interval]))",
+          "legendFormat": "{{method}} {{path}}",
+          "queryType": "range"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 25,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 37,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 72
+      }
+    },
+    {
+      "id": 38,
+      "type": "row",
+      "title": "Logs (Loki)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 79
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Logs por nivel",
+      "description": "Líneas de log por nivel (error, warn, info). Sin nivel = el formato no lo trae.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds_loki}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds_loki}"
+          },
+          "expr": "sum by (level) (count_over_time({project=~\"cv-devops.*\"} [$__interval]))",
+          "legendFormat": "{{level}}",
+          "queryType": "range"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 25,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "warn"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "info"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "debug"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 39,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 80
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Errores por servicio",
+      "description": "Qué servicio genera los errores.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds_loki}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds_loki}"
+          },
+          "expr": "sum by (service) (count_over_time({project=~\"cv-devops.*\", level=\"error\"} [$__interval]))",
+          "legendFormat": "{{service}}",
+          "queryType": "range"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 25,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 40,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 80
+      }
+    },
+    {
+      "type": "logs",
+      "title": "Últimos errores",
+      "description": "Solo level=error, de todos los servicios.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds_loki}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds_loki}"
+          },
+          "expr": "{project=~\"cv-devops.*\", level=\"error\"}",
           "legendFormat": "",
           "queryType": "range"
         }
       ],
       "options": {
         "showTime": true,
+        "showLabels": false,
         "wrapLogMessage": true,
         "prettifyLogMessage": false,
         "enableLogDetails": true,
         "sortOrder": "Descending",
         "dedupStrategy": "none"
       },
-      "id": 37,
+      "id": 41,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 87
+      }
+    },
+    {
+      "type": "logs",
+      "title": "Logs",
+      "description": "Filtrá por servicio, nivel y texto con las variables de arriba.",
+      "datasource": {
+        "type": "loki",
+        "uid": "${ds_loki}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${ds_loki}"
+          },
+          "expr": "{project=~\"cv-devops.*\", service=~\"$service\", level=~\"$level\"} |~ `(?i)$search`",
+          "legendFormat": "",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      },
+      "id": 42,
       "gridPos": {
         "h": 14,
         "w": 24,
         "x": 0,
-        "y": 79
+        "y": 95
+      }
+    },
+    {
+      "id": 43,
+      "type": "row",
+      "title": "Salud del propio monitoreo",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 109
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Logs enviados a Loki",
+      "description": "Si cae a 0, el pipeline de logs está cortado (alerta LogsNotArriving).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "sum(rate(loki_write_sent_entries_total[$__rate_interval]))",
+          "legendFormat": "líneas/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 44,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 110
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Logs descartados",
+      "description": "Debe ser 0. Si no, Loki está rechazando líneas.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "sum by (reason) (rate(loki_write_dropped_entries_total[$__rate_interval]))",
+          "legendFormat": "{{reason}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 45,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 110
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Espacio de Prometheus (TSDB)",
+      "description": "Cuánto ocupan las métricas almacenadas (retención de 7 días).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds_prom}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds_prom}"
+          },
+          "expr": "prometheus_tsdb_storage_blocks_bytes",
+          "legendFormat": "bloques"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 46,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 110
       }
     }
   ],
@@ -2013,6 +2479,21 @@
         "multi": true,
         "includeAll": true,
         "allValue": ".+",
+        "options": [],
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "level",
+        "label": "Nivel (logs)",
+        "type": "custom",
+        "query": "error,warn,info,debug",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
         "options": [],
         "current": {
           "selected": true,
