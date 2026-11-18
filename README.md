@@ -1,14 +1,12 @@
-# CV DevOps
+# CV DevOps - Pablo Agustín Miño
 
-![CI](https://github.com/PabloMinioo/cv-devops/actions/workflows/ci.yml/badge.svg)
-
-Versión ampliada de mi currículum. En lugar de listar herramientas, las muestro funcionando: una aplicación mínima corriendo sobre un stack completo de contenedores, con monitoreo, logs centralizados, endurecimiento de seguridad y un pipeline de CI.
+Versión ampliada de mi currículum. En lugar de listar herramientas, las muestro funcionando: una aplicación mínima corriendo sobre un stack completo de contenedores, con monitoreo y logs centralizados y un pipeline de CI.
 
 Todo corre en local con un solo comando; no hace falta servidor ni cuenta en ningún servicio.
 
 ## Qué hace la aplicación
 
-Una página que te pide tu nombre, lo guarda en PostgreSQL y te saluda: *"Hola {nombre}, esta es una versión más desarrollada de mi currículum"*. La aplicación es simple a propósito: sirve de excusa para tener tráfico real que monitorear.
+Una página que te pide tu nombre, lo guarda en PostgreSQL y te saluda: *"Hola {nombre}, esta es una versión más desarrollada de mi currículum"*. La aplicación es simple a propósito, es para demostrar mis habilidades de DevOps.
 
 ## Qué incluye
 
@@ -40,7 +38,7 @@ cd cv-devops
 
 El script crea el archivo `.env` con contraseñas aleatorias la primera vez (no hay que editar nada), levanta la aplicación y después el monitoreo. La primera ejecución tarda unos minutos porque descarga imágenes y dependencias.
 
-Para apagar todo: `./down-api.sh` (agregá `-v` para borrar también los datos).
+Para apagar todo: `./down-api.sh`.
 
 ## Accesos
 
@@ -58,7 +56,7 @@ Todos los puertos escuchan solo en `127.0.0.1`.
 
 1. Abrí la aplicación y registrá tu nombre.
 2. En Grafana, abrí el dashboard **CV DevOps - Overview**: vas a ver la request, el nuevo visitante y el log del registro.
-3. Probá una alerta: `docker compose -f docker-compose-cvapi.yml stop api`. En uno o dos minutos aparecen `TargetDown` y `ContainerDown` en Alertmanager. Después `start api` y se resuelven.
+3. Probá una alerta: `docker compose -f docker-compose-cvapi.yml stop api`. Aparecerá `TargetDown` y `ContainerDown` en Alertmanager. Después `docker compose -f docker-compose-cvapi.yml start api` y se resuelven.
 
 ## La API
 
