@@ -1,46 +1,174 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CV - Pablo Agustín Miño</title>
+  <title>cv-devops-pablo</title>
+  <meta name="description" content="Mi currículum DevOps, ampliado y funcionando.">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main>
-    <form id="form">
-      <h1>¡Bienvenido!</h1>
-      <label for="name">¿Cómo te llamás?</label>
-      <input id="name" maxlength="50" required>
-      <button type="submit">Entrar</button>
-    </form>
-    <section id="cv" hidden>
-      <h1 id="greeting"></h1>
-    </section>
-    <p id="error" hidden></p>
+
+  <!-- 1. PANTALLA DE BIENVENIDA -->
+  <main id="welcome" class="welcome">
+    <div class="welcome-card">
+      <p class="eyebrow">cv-devops-pablo</p>
+      <h1>Hola, ¿cómo te llamás?</h1>
+      <p class="muted">Dejá tu nombre para entrar a la versión ampliada de mi currículum.</p>
+      <form id="name-form" novalidate>
+        <label for="name-input" class="sr-only">Tu nombre</label>
+        <input id="name-input" name="name" type="text" maxlength="50" autocomplete="given-name"
+               placeholder="Tu nombre" required autofocus>
+        <button id="name-submit" type="submit">Entrar</button>
+      </form>
+      <p id="name-error" class="error" role="alert" hidden></p>
+    </div>
   </main>
-  <script>
-    const form = document.getElementById('form');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('name').value.trim();
-      try {
-        const res = await fetch('/api/visitors', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        });
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        document.getElementById('greeting').textContent =
-          `Hola ${data.name}, esta es una versión más desarrollada de mi currículum`;
-        form.hidden = true;
-        document.getElementById('cv').hidden = false;
-      } catch {
-        const err = document.getElementById('error');
-        err.textContent = 'No pude conectar con el servidor.';
-        err.hidden = false;
-      }
-    });
-  </script>
+
+  <!-- 2. PÁGINA DEL CV -->
+  <div id="site" hidden>
+
+    <header class="topbar">
+      <h1 class="brand">cv-devops-pablo</h1>
+      <button id="change-name" type="button" class="link-button">Cambiar nombre</button>
+    </header>
+
+    <main class="container">
+
+      <!-- Mensaje de bienvenida -->
+      <section class="hero" aria-labelledby="greeting">
+        <h2 id="greeting"></h2>
+        <p>Esta página es mi currículum con más detalle. En lugar de listar herramientas, las muestro
+           funcionando: todo lo que ves corre en tu máquina con <code>docker compose</code>.
+           Elegí una solapa para ver qué sé y qué hice en cada área.</p>
+      </section>
+
+      <!-- Resumen de la API -->
+      <section class="card api" aria-labelledby="api-title">
+        <div class="api-head">
+          <h2 id="api-title">La API</h2>
+          <p class="counter"><span id="visitor-count">–</span> <small>visitantes registrados</small></p>
+        </div>
+        <p>Una API en Spring Boot y PostgreSQL que guarda los nombres como el que acabás de escribir.
+           Es simple a propósito: sirve para tener tráfico real que monitorear.</p>
+        <ul class="endpoints">
+          <li><code>POST /api/visitors</code> <span>guarda un visitante</span></li>
+          <li><code>GET /api/visitors/count</code> <span>cuántos hay</span></li>
+        </ul>
+      </section>
+
+      <!-- Solapas -->
+      <div class="tabs">
+        <div class="tablist" role="tablist" aria-label="Áreas del currículum">
+          <button role="tab" id="tab-contenedores" aria-controls="panel-contenedores" aria-selected="true">Contenedores</button>
+          <button role="tab" id="tab-cicd" aria-controls="panel-cicd" aria-selected="false" tabindex="-1">CI/CD</button>
+          <button role="tab" id="tab-monitoreo" aria-controls="panel-monitoreo" aria-selected="false" tabindex="-1">Monitoreo</button>
+          <button role="tab" id="tab-logs" aria-controls="panel-logs" aria-selected="false" tabindex="-1">Logs</button>
+          <button role="tab" id="tab-seguridad" aria-controls="panel-seguridad" aria-selected="false" tabindex="-1">Seguridad</button>
+          <button role="tab" id="tab-basedatos" aria-controls="panel-basedatos" aria-selected="false" tabindex="-1">Base de datos</button>
+        </div>
+
+        <!-- Contenedores -->
+        <section role="tabpanel" id="panel-contenedores" aria-labelledby="tab-contenedores" class="card panel">
+          <h2>Contenedores</h2>
+          <p class="lead">Cómo empaqueto la aplicación y ordeno su ejecución.</p>
+          <ul>
+            <li>Dockerfile multi-stage (dependencias, desarrollo, build y producción): imagen final liviana, sin herramientas de compilación y con usuario no root.</li>
+            <li>Docker Compose con dos archivos (aplicación y monitoreo), redes separadas y volúmenes con nombre.</li>
+            <li>Healthchecks y <code>depends_on</code> con <code>service_healthy</code> para que cada servicio arranque cuando sus dependencias están listas.</li>
+          </ul>
+          <p class="links">
+            <a href="https://github.com/PabloMinioo/cv-devops/blob/main/api/Dockerfile" target="_blank" rel="noopener">Dockerfile</a>
+            <a href="https://github.com/PabloMinioo/cv-devops/blob/main/docker-compose-cvapi.yml" target="_blank" rel="noopener">Compose de la aplicación</a>
+            <a href="https://github.com/PabloMinioo/cv-devops/blob/main/docker-compose-monitoring.yml" target="_blank" rel="noopener">Compose del monitoreo</a>
+          </p>
+        </section>
+
+        <!-- CI/CD -->
+        <section role="tabpanel" id="panel-cicd" aria-labelledby="tab-cicd" class="card panel" hidden>
+          <h2>CI/CD</h2>
+          <p class="lead">Cómo se valida, se construye y se publica cada cambio.</p>
+          <ul>
+            <li>Pipeline en GitHub Actions: valida los Compose, construye la imagen, la escanea con Trivy y la publica en GitHub Container Registry.</li>
+            <li>El escaneo falla ante vulnerabilidades altas o críticas con parche disponible.</li>
+            <li>Dependabot mantiene al día las imágenes, las actions y las dependencias.</li>
+          </ul>
+          <p class="links">
+            <a href="https://github.com/PabloMinioo/cv-devops/actions" target="_blank" rel="noopener">Ejecuciones del pipeline</a>
+            <a href="https://github.com/PabloMinioo/cv-devops/blob/main/.github/workflows/ci.yml" target="_blank" rel="noopener">ci.yml</a>
+            <a href="https://github.com/users/PabloMinioo/packages/container/package/cv-devops-api" target="_blank" rel="noopener">Imagen en GHCR</a>
+          </p>
+        </section>
+
+        <!-- Monitoreo -->
+        <section role="tabpanel" id="panel-monitoreo" aria-labelledby="tab-monitoreo" class="card panel" hidden>
+          <h2>Monitoreo</h2>
+          <p class="lead">Qué mido, cómo me entero de los problemas y dónde lo veo.</p>
+          <ul>
+            <li>Prometheus recolecta métricas de la API, la base de datos, los contenedores y el servidor.</li>
+            <li>Reglas de alerta sobre síntomas (errores, latencia, recursos) y no solo sobre caídas, gestionadas con Alertmanager.</li>
+            <li>Un único dashboard en Grafana, provisionado desde el repositorio.</li>
+          </ul>
+          <p class="links">
+            <a href="http://localhost:3000/d/cv-overview" target="_blank" rel="noopener">Dashboard en Grafana</a>
+            <a href="http://localhost:9090" target="_blank" rel="noopener">Prometheus</a>
+            <a href="http://localhost:9093" target="_blank" rel="noopener">Alertmanager</a>
+          </p>
+          <p class="hint">Los links a <code>localhost</code> funcionan cuando el stack está levantado en tu máquina.</p>
+        </section>
+
+        <!-- Logs -->
+        <section role="tabpanel" id="panel-logs" aria-labelledby="tab-logs" class="card panel" hidden>
+          <h2>Logs</h2>
+          <p class="lead">Cómo hago que los logs de todos los servicios se puedan leer en un solo lugar.</p>
+          <ul>
+            <li>Alloy recolecta los logs de los contenedores y Loki los almacena.</li>
+            <li>Cada línea recibe un nivel (info, warn, error), los stack traces se unen en un solo evento y se descarta el ruido.</li>
+            <li>Pocas etiquetas de valores fijos, para no inflar el almacenamiento.</li>
+          </ul>
+          <p class="links">
+            <a href="http://localhost:3000/d/cv-overview" target="_blank" rel="noopener">Logs en Grafana</a>
+            <a href="http://localhost:12345" target="_blank" rel="noopener">Interfaz de Alloy</a>
+            <a href="https://github.com/PabloMinioo/cv-devops/blob/main/monitoring/alloy/config.alloy" target="_blank" rel="noopener">config.alloy</a>
+          </p>
+        </section>
+
+        <!-- Seguridad -->
+        <section role="tabpanel" id="panel-seguridad" aria-labelledby="tab-seguridad" class="card panel" hidden>
+          <h2>Seguridad</h2>
+          <p class="lead">Qué decisiones tomé para reducir la superficie de ataque.</p>
+          <ul>
+            <li>Contenedores con <code>no-new-privileges</code> y sin capacidades de Linux; se devuelven solo las imprescindibles.</li>
+            <li>Contraseñas generadas en el primer arranque, sin secretos en el repositorio, y puertos publicados solo en localhost.</li>
+            <li>Escaneo de vulnerabilidades con Trivy dentro del pipeline.</li>
+          </ul>
+          <p class="links">
+            <a href="https://github.com/PabloMinioo/cv-devops/blob/main/docker-compose-cvapi.yml" target="_blank" rel="noopener">Compose con hardening</a>
+            <a href="https://github.com/PabloMinioo/cv-devops/blob/main/.github/workflows/ci.yml" target="_blank" rel="noopener">Escaneo en el pipeline</a>
+          </p>
+        </section>
+
+        <!-- Base de datos -->
+        <section role="tabpanel" id="panel-basedatos" aria-labelledby="tab-basedatos" class="card panel" hidden>
+          <h2>Base de datos</h2>
+          <p class="lead">PostgreSQL: cómo la levanto y cómo la observo.</p>
+          <ul>
+            <li>PostgreSQL 18 con esquema inicial (<code>init.sql</code>) y healthcheck.</li>
+            <li>Métricas de conexiones, transacciones, caché y tamaño con postgres-exporter.</li>
+          </ul>
+          <p class="links">
+            <a href="https://github.com/PabloMinioo/cv-devops/blob/main/db/init.sql" target="_blank" rel="noopener">init.sql</a>
+            <a href="http://localhost:3000/d/cv-overview" target="_blank" rel="noopener">Métricas en Grafana</a>
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <a href="https://github.com/PabloMinioo/cv-devops" target="_blank" rel="noopener">Código en GitHub</a>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
