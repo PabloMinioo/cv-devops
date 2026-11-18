@@ -1,42 +1,42 @@
-// 1. Descubre contenedores, SOLO los de este repo
 discovery.docker "containers" {
   host = "unix:///var/run/docker.sock"
-  filter {
-    name   = "label"
-    values = [
-      "com.docker.compose.project=cv-devops",
-      "com.docker.compose.project=cv-devops-monitoring",
-    ]
-  }
 }
 
-// 2. Etiquetas útiles para buscar en Grafana
+// Descubre contenedores, SOLO los de este repo
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
+ 
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    regex         = "cv-devops(-monitoring)?"
+    action        = "keep"
+  }
 
   rule {
     source_labels = ["__meta_docker_container_name"]
     regex         = "/(.*)"
     target_label  = "container"
   }
+
   rule {
     source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
     target_label  = "service"
   }
+
   rule {
     source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
     target_label  = "project"
   }
 }
 
-// 3. Lee los logs de esos contenedores
+// Lee los logs de esos contenedores
 loki.source.docker "containers" {
   host       = "unix:///var/run/docker.sock"
   targets    = discovery.relabel.containers.output
   forward_to = [loki.write.local.receiver]
 }
 
-// 4. Los manda a Loki
+// Los manda a Loki
 loki.write "local" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"
