@@ -1,19 +1,15 @@
-// 1. Descubre contenedores, SOLO los de este repo
 discovery.docker "containers" {
   host = "unix:///var/run/docker.sock"
-  filter {
-    name   = "label"
-    values = [
-      "com.docker.compose.project=cv-devops",
-      "com.docker.compose.project=cv-devops-monitoring",
-    ]
-  }
 }
 
-// 2. Etiquetas útiles para buscar en Grafana
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
 
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    regex         = "cv-devops(-monitoring)?"
+    action        = "keep"
+  }
   rule {
     source_labels = ["__meta_docker_container_name"]
     regex         = "/(.*)"
@@ -29,14 +25,142 @@ discovery.relabel "containers" {
   }
 }
 
-// 3. Lee los logs de esos contenedores
-loki.source.docker "containers" {
-  host       = "unix:///var/run/docker.sock"
-  targets    = discovery.relabel.containers.output
-  forward_to = [loki.write.local.receiver]
+discovery.relabel "api" {
+  targets = discovery.relabel.containers.output
+  rule {
+    source_labels = ["service"]
+    regex         = "api"
+    action        = "keep"
+  }
 }
 
-// 4. Los manda a Loki
+discovery.relabel "others" {
+  targets = discovery.relabel.containers.output
+  rule {
+    source_labels = ["service"]
+    regex         = "api"
+    action        = "drop"
+  }
+}
+
+loki.source.docker "api" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.api.output
+  forward_to = [loki.process.api.receiver]
+}
+
+loki.source.docker "others" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.others.output
+  forward_to = [loki.process.others.receiver]
+}
+
+loki.process "api" {
+  forward_to = [loki.write.local.receiver]
+
+  stage.multiline {
+    firstline     = `^\d{4}-\d{2}-\d{2}T`
+    max_wait_time = "3s"
+  }
+
+  stage.regex {
+    expression = `^\S+\s+(?P<level>TRACE|DEBUG|INFO|WARN|ERROR)\s`
+  }
+  stage.template {
+    source   = "level"
+    template = `{{ ToLower .Value }}`
+  }
+  stage.labels {
+    values = { level = "" }
+  }
+}
+
+loki.process "others" {
+  forward_to = [loki.write.local.receiver]
+
+  stage.drop {
+    expression          = `"(GET|HEAD) /(health|actuator/health)[ ?]`
+    drop_counter_reason = "healthcheck"
+  }
+
+  stage.drop {
+    expression          = `caller=metrics\.go`
+    drop_counter_reason = "loki_query_stats"
+  }
+  stage.drop {
+    expression          = `logger=(query_data|plugin\.(prometheus|loki)) `
+    drop_counter_reason = "grafana_query_noise"
+  }
+
+  stage.match {
+    selector = `{service=~"prometheus|alertmanager|grafana|loki|alloy|node-exporter|postgres-exporter"}`
+
+    stage.logfmt {
+      mapping = { level = "" }
+    }
+    stage.template {
+      source   = "level"
+      template = `{{ ToLower .Value }}`
+    }
+    stage.labels {
+      values = { level = "" }
+    }
+  }
+
+  stage.match {
+    selector = `{service="postgres"}`
+
+    stage.regex {
+      expression = `\[\d+\] (?P<level>LOG|WARNING|ERROR|FATAL|PANIC)`
+    }
+    stage.template {
+      source   = "level"
+      template = `{{ if eq .Value "LOG" }}info{{ else if eq .Value "WARNING" }}warn{{ else }}error{{ end }}`
+    }
+    stage.labels {
+      values = { level = "" }
+    }
+  }
+
+  stage.match {
+    selector = `{service="cadvisor"}`
+
+    stage.regex {
+      expression = `^(?P<level>[IWEF])\d{4} `
+    }
+    stage.template {
+      source   = "level"
+      template = `{{ if eq .Value "W" }}warn{{ else if eq .Value "E" }}error{{ else if eq .Value "F" }}error{{ else }}info{{ end }}`
+    }
+    stage.labels {
+      values = { level = "" }
+    }
+  }
+
+  stage.match {
+    selector = `{service="nginx"}`
+
+    stage.regex {
+      expression = `" (?P<level>[0-9])[0-9]{2} `
+    }
+    stage.template {
+      source   = "level"
+      template = `{{ if eq .Value "5" }}error{{ else if eq .Value "4" }}warn{{ else }}info{{ end }}`
+    }
+    stage.labels {
+      values = { level = "" }
+    }
+  }
+
+  stage.match {
+    selector = `{service="nginx"} |~ "\\[(error|crit|alert|emerg)\\]"`
+
+    stage.static_labels {
+      values = { level = "error" }
+    }
+  }
+}
+
 loki.write "local" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"

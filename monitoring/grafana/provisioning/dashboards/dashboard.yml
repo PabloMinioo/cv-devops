@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: cv-devops
+    orgId: 1
+    folder: ""
+    type: file
+    updateIntervalSeconds: 30    # recarga el archivo si cambia
+    options:
+      path: /var/lib/grafana/dashboards
