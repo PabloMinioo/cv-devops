@@ -77,7 +77,7 @@ services:
 
   # POSTGRES METRICS
   postgres-exporter:
-    image: ghcr.io/prometheus-community/postgres-exporter:v0.20.1
+    image: ghcr.io/prometheus-community/postgres-exporter:v0.21.1
     container_name: cv-postgres-exporter
     <<: *hardening
     restart: unless-stopped
